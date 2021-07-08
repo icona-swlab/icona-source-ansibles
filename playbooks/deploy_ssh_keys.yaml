@@ -1,0 +1,25 @@
+---
+# Prima di lanciare il playbook è necessario installare il modulo posix:
+#   ansible-galaxy collection install community.posix
+#
+# Come distribuire le chiavi:
+#   ansible-playbook -i inventory.yaml -l NOMEHOST deploy_ssh_keys.yaml
+#
+# Se si vuole essere sicuri di avere installato nel server solamente le chiavi impostate, eseguire:
+#   ansible-playbook -e remove_other_sshkeys=True -i inventory.yaml -l NOMEHOST deploy_ssh_keys.yaml
+
+- hosts: "*"
+  become: true
+
+  tasks:
+    - name: Installo tutte le chiavi dei vari utenti
+      ansible.posix.authorized_key:
+        user: "{{ item.user }}"
+        state: present
+        key: "{{ item.sshkeys | flatten | join('\n') }}"
+        exclusive: " {{ remove_other_sshkeys|bool }}"
+      loop: "{{ ssh_users_keys }}"
+
+#    - debug:
+#        msg: "{{ item.user }} => {{ item.sshkeys | flatten | join('\n') }}"
+#      loop: "{{ ssh_users_keys }}"

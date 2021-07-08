@@ -1,0 +1,27 @@
+---
+
+- hosts: "*"
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Abilito l'accesso tramite chiave
+      ansible.builtin.lineinfile: dest=/etc/ssh/sshd_config regexp='^#?PubkeyAuthentication' line='PubkeyAuthentication yes'
+      notify:
+      - restart sshd
+
+    - name: Disabilito l'accesso tramite password
+      ansible.builtin.lineinfile: dest=/etc/ssh/sshd_config regexp='^#?PasswordAuthentication' line='PasswordAuthentication no'
+      notify:
+      - restart sshd
+
+    - name: Verifica la correttezza del file di configurazione di sshd
+      ansible.builtin.command: sshd -t
+      changed_when: false
+
+  handlers:
+      # Riavvia sshd, solo se il file di configurazione di sshd è valido
+    - name: restart sshd
+      ansible.builtin.service:
+        name: sshd
+        state: restarted

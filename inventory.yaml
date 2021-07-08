@@ -1,0 +1,61 @@
+all:
+
+  vars:
+
+    # rimuove tutte le altre chiavi dell'utente
+    remove_other_sshkeys: False
+
+    # chiavi da copiare su tutti i server (solo per gli utenti riportati sopra)
+    masterkeys:
+      - "ssh-ed25519 M1AAC3NzaC1lZDI1NTE5AAAAIIZB/Os2yo7i7/wYuklNJercxiPLko7Vv3HddFsvKI1K masterkey1"
+      - "ssh-ed25519 M2AAC3NzaC1lZDI1NTE5AAAAIIZB/Os2yo7i7/wYuklNJercxiPLko7Vv3HddFsvKI1K masterkey2"
+
+    # definizione degli utenti, con le relative chiavi
+    utente1icona :
+      - "ssh-ed25519 A1AAC3NzaC1lZDI1NTE5AAAAIIZB/Os2yo7i7/wYuklNJercxiPLko7Vv3HddFsvKI1K user1key1"
+      - "ssh-ed25519 A2AAC3NzaC1lZDI1NTE5AAAAIIZB/Os2yo7i7/wYuklNJercxiPLko7Vv3HddFsvKI1K user1key2"
+    utente2icona:
+      - "ssh-ed25519 B1AAC3NzaC1lZDI1NTE5AAAAIIZB/Os2yo7i7/wYuklNJercxiPLko7Vv3HddFsvKI1K user2key1"
+    utente1desk:
+      - "ssh-ed25519 B1AAC3NzaC1lZDI1NTE5AAAAIIZB/Os2yo7i7/wYuklNJercxiPLko7Vv3HddFsvKI1K DESKuser1key1"
+
+  # definizione degli host non appartenente a nessun gruppo
+  hosts:
+    localhost:
+      # variabili associate al singolo host
+      ansible_connection: local
+      ssh_users_keys:
+        - user: kalos
+          sshkeys:
+            - "{{ utente1icona }}"
+            - "{{ utente2icona }}"
+        - user: root
+          sshkeys:
+            - "{{ utente1desk }}"
+            - "{{ masterkeys }}"
+
+  # definizione dei gruppi di hosts
+  children:
+    webservers:
+      hosts:
+        foo.example.com:
+          # variabili del singolo host
+          ssh_users_keys:
+            - user: francesco
+              keys:
+                - "{{ utente1icona }}"
+        mioserverX:
+          # variabili che sovrascrivono la normale connessione ssh
+          ansible_host: mioserverX.icona.it # in questo modo mioserverX è un semplice alias di mioserverX.icona.it
+          ansible_port: 22666
+          ansible_ssh_private_key_file: /Users/francesco/.ssh/XXX
+          ansible_ssh_pass: "password" # metodo non consigliato
+    dbservers:
+      hosts:
+        one.example.com:
+        two.example.com:
+        three.example.com:
+      vars:
+        # variabili condivise tra tutti gli hosts appartenenti al gruppo
+        ansible_user: "francesco"
+        ansible_become_password: "passwordSudoPerDiventareRoot"
